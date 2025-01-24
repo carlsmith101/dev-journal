@@ -1,38 +1,49 @@
-import { BaseSyntheticEvent, SyntheticEvent } from "react";
+import { ChangeEvent } from 'react';
 
-const list = [
-  {
-    title: 'React',
-    url: 'https://reactjs.org/',
-    author: 'Jordan Walke',
-    num_comments: 3,
-    points: 4,
-    objectId: 0
-  },
-  {
-    title: 'Redux',
-    url: 'https://redux.js.org/',
-    author: 'Dan Abramov, Andrew Clark',
-    num_comments: 2,
-    points: 5,
-    objectId: 1
-  }
-];
+type Story = {
+  objectId: number
+  url: string
+  title: string
+  author: string
+  num_comments: number
+  points: number
+}
 
-const App = () => (
-  <div>
-    <h1>Development Journal</h1>
+const App = () => {
+  const stories = [
+    {
+      title: 'React',
+      url: 'https://reactjs.org/',
+      author: 'Jordan Walke',
+      num_comments: 3,
+      points: 4,
+      objectId: 0
+    },
+    {
+      title: 'Redux',
+      url: 'https://redux.js.org/',
+      author: 'Dan Abramov, Andrew Clark',
+      num_comments: 2,
+      points: 5,
+      objectId: 1
+    }
+  ];
 
-    <Search />
-
-    <hr />
-
-    <List />
-  </div>
-);
+  return (
+    <div>
+      <h1>Development Journal</h1>
+  
+      <Search />
+  
+      <hr />
+  
+      <List list={stories} />
+    </div>
+  );
+}
 
 const Search = () => {
-  const handleChange = (event: BaseSyntheticEvent) => {
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
 
     console.log(event);
 
@@ -47,19 +58,31 @@ const Search = () => {
   );
 }
 
-const List = () => (
+type ListProps = {
+  list: Story[]
+}
+
+const List = (props: ListProps) => (
   <ul>
-    {list.map(item => (
-      <li key={item.objectId}>
-        <span>
-          <a href={item.url}>{item.title}</a>
-        </span>
-        <span>{item.author}</span>
-        <span>{item.num_comments}</span>
-        <span>{item.points}</span>
-      </li>
+    {props.list.map((item: any) => (
+      <Item key={item.objectId} item={item} />
     ))}
   </ul>
 );
+
+type ItemProps = {
+  item: Story
+}
+
+const Item = (props: ItemProps) => (
+  <li>
+  <span>
+    <a href={props.item.url}>{props.item.title}</a>
+  </span>
+  <span>{props.item.author}</span>
+  <span>{props.item.num_comments}</span>
+  <span>{props.item.points}</span>
+</li>
+)
 
 export default App;
