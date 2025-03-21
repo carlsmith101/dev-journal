@@ -1,4 +1,4 @@
-import React, { ChangeEvent, Fragment, HTMLInputTypeAttribute, MouseEventHandler, ReactNode, useEffect, useReducer, useState } from 'react';
+import React, { ChangeEvent, Fragment, HTMLInputTypeAttribute, MouseEventHandler, ReactNode, useCallback, useEffect, useReducer, useState } from 'react';
 
 type Story = {
   objectId: number
@@ -27,14 +27,6 @@ const initialStories = [
     objectId: 1
   }
 ];
-
-const getAsyncStories = (): Promise<{ data: { stories: Story[] } }> =>
-  new Promise((resolve) =>
-    setTimeout(
-      () => resolve({ data: { stories: initialStories } }),
-      2000
-    )
-  );
 
 type StoriesState = {
   data: Story[]
@@ -94,8 +86,9 @@ const storiesReducer = (
       return {
         ...state,
         data: state.data.filter(
-        (story: Story) => action.payload.objectId !== story.objectId
-      )}
+          (story: Story) => action.payload.objectId !== story.objectId
+        )
+      }
     default:
       throw new Error();
   }
@@ -113,29 +106,43 @@ const useStorageState = (key: string, initialState: string) => {
   return [value, setValue] as const;
 };
 
+const API_ENDPOINT = 'https://hn.algolia.com/api/v1/search?query=';
+
 const App = () => {
   const [searchTerm, setSearchTerm] = useStorageState(
     'search',
     'React'
   );
 
-  const [stories, dispatchStories] = useReducer(
-    storiesReducer,
-    { data: [], isLoading: false, isError: false}
+  const [url, setUrl] = useState(
+    `${API_ENDPOINT}${searchTerm}`
   );
 
-  useEffect(() => {
+  const [stories, dispatchStories] = useReducer(
+    storiesReducer,
+    { data: [], isLoading: false, isError: false }
+  );
+
+  const handleFetchStories = useCallback(() => {
+    if (!searchTerm) return;
+
     dispatchStories({ type: 'STORIES_FETCH_INIT' })
 
-    getAsyncStories()
-    .then(result => {
-      dispatchStories({
-        type: 'STORIES_FETCH_SUCCESS',
-        payload: result.data.stories
-      });
-    })
+    fetch(url)
+      .then((response) => response.json())
+      .then(result => {
+        dispatchStories({
+          type: 'STORIES_FETCH_SUCCESS',
+          payload: result.hits
+        });
+      })
       .catch(() => dispatchStories({ type: 'STORIES_FETCH_FAILURE' }));
-  }, [])
+  }, [url]);
+
+  useEffect(() => {
+    handleFetchStories();
+  }, [handleFetchStories]);
+
 
   const handleRemoveStory = (item: Story) => {
     dispatchStories({
@@ -144,15 +151,15 @@ const App = () => {
     });
   }
 
-  const handleSearch = (
+  const handleSearchInput = (
     event: ChangeEvent<HTMLInputElement>
   ) => {
     setSearchTerm(event.target.value)
   };
 
-  const searchedStories = stories.data.filter((story) =>
-    story.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleSearchSubmit = () => {
+    setUrl(`${API_ENDPOINT}${searchTerm}`)
+  }
 
   return (
     <div>
@@ -162,10 +169,19 @@ const App = () => {
         id="search"
         value={searchTerm}
         isFocused
-        onInputChange={handleSearch}
+        onInputChange={handleSearchInput}
+        onInputSubmit={handleSearchSubmit}
       >
         Search:
       </InputWithLabel>
+
+      <button
+        type='button'
+        disabled={!searchTerm}
+        onClick={handleSearchSubmit}
+      >
+        Submit
+      </button>
       <hr />
 
       {stories.isError && <p>Something went wrong ...</p>}
@@ -173,7 +189,7 @@ const App = () => {
       {stories.isLoading ? (
         <p>Loading ...</p>
       ) : (
-        <List list={searchedStories} onRemoveItem={handleRemoveStory} />
+        <List list={stories.data} onRemoveItem={handleRemoveStory} />
       )}
     </div>
   );
@@ -185,6 +201,7 @@ type InputWithLabelProps = {
   value: string
   isFocused: boolean
   onInputChange: (event: ChangeEvent<HTMLInputElement>) => void
+  onInputSubmit: () => void
   children: ReactNode
 }
 
@@ -194,6 +211,7 @@ const InputWithLabel = ({
   value,
   isFocused,
   onInputChange,
+  onInputSubmit,
   children
 }: InputWithLabelProps) => (
   <>
@@ -205,6 +223,7 @@ const InputWithLabel = ({
       value={value}
       autoFocus={isFocused}
       onChange={onInputChange}
+      onSubmit={onInputSubmit}
     />
   </>
 );
