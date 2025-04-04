@@ -1,4 +1,5 @@
 import React, { ChangeEvent, Fragment, HTMLInputTypeAttribute, MouseEventHandler, ReactNode, useCallback, useEffect, useReducer, useState } from 'react';
+import axios from 'axios';
 
 type Story = {
   objectId: number
@@ -123,20 +124,21 @@ const App = () => {
     { data: [], isLoading: false, isError: false }
   );
 
-  const handleFetchStories = useCallback(() => {
+  const handleFetchStories = useCallback(async () => {
     if (!searchTerm) return;
 
     dispatchStories({ type: 'STORIES_FETCH_INIT' })
 
-    fetch(url)
-      .then((response) => response.json())
-      .then(result => {
-        dispatchStories({
-          type: 'STORIES_FETCH_SUCCESS',
-          payload: result.hits
-        });
-      })
-      .catch(() => dispatchStories({ type: 'STORIES_FETCH_FAILURE' }));
+    try {
+      const result = await axios.get(url)
+
+      dispatchStories({
+        type: 'STORIES_FETCH_SUCCESS',
+        payload: result.data.hits
+      });
+    } catch {
+      dispatchStories({ type: 'STORIES_FETCH_FAILURE' });
+    }
   }, [url]);
 
   useEffect(() => {
@@ -158,30 +160,21 @@ const App = () => {
   };
 
   const handleSearchSubmit = () => {
-    setUrl(`${API_ENDPOINT}${searchTerm}`)
+    setUrl(`${API_ENDPOINT}${searchTerm}`);
+
+    event?.preventDefault();
   }
 
   return (
     <div>
       <h1>Development Journal</h1>
 
-      <InputWithLabel
-        id="search"
-        value={searchTerm}
-        isFocused
-        onInputChange={handleSearchInput}
-        onInputSubmit={handleSearchSubmit}
-      >
-        Search:
-      </InputWithLabel>
+      <SearchForm
+      searchTerm={searchTerm}
+      onSearchInput={handleSearchInput}
+      onSearchSubmit={handleSearchSubmit}
+      ></SearchForm>
 
-      <button
-        type='button'
-        disabled={!searchTerm}
-        onClick={handleSearchSubmit}
-      >
-        Submit
-      </button>
       <hr />
 
       {stories.isError && <p>Something went wrong ...</p>}
@@ -195,13 +188,39 @@ const App = () => {
   );
 }
 
+type searchFormProps = {
+  searchTerm: string
+  onSearchInput: (event: ChangeEvent<HTMLInputElement>) => void
+  onSearchSubmit: () => void
+}
+
+const SearchForm = ({
+  searchTerm,
+  onSearchInput,
+  onSearchSubmit,
+}: searchFormProps) => (
+  <form onSubmit={onSearchSubmit}>
+  <InputWithLabel
+    id="search"
+    value={searchTerm}
+    isFocused
+    onInputChange={onSearchInput}
+  >
+    <strong>Search:</strong>
+  </InputWithLabel>
+
+  <button type="submit"disabled={!searchTerm}>
+    Submit
+  </button>
+  </form>
+)
+
 type InputWithLabelProps = {
   id: string
   type?: HTMLInputTypeAttribute
   value: string
   isFocused: boolean
   onInputChange: (event: ChangeEvent<HTMLInputElement>) => void
-  onInputSubmit: () => void
   children: ReactNode
 }
 
@@ -211,7 +230,6 @@ const InputWithLabel = ({
   value,
   isFocused,
   onInputChange,
-  onInputSubmit,
   children
 }: InputWithLabelProps) => (
   <>
@@ -223,7 +241,6 @@ const InputWithLabel = ({
       value={value}
       autoFocus={isFocused}
       onChange={onInputChange}
-      onSubmit={onInputSubmit}
     />
   </>
 );
