@@ -1,7 +1,70 @@
 import React, { ChangeEvent, Fragment, HTMLInputTypeAttribute, MouseEventHandler, ReactNode, useCallback, useEffect, useReducer, useState } from 'react';
 import axios from 'axios';
+import styled from 'styled-components';
 
-import './App.css';
+import styles from './App.module.css';
+
+const StyledContainer = styled.div`
+  height: 100vw;
+  padding: 20px;
+
+  background: #83a4d4;
+  background: linear-gradient(to left, #b6fbff, #83a4d4);
+
+  color: #171212;
+`;
+
+const StyledHeadlinePrimary = styled.h1`
+  font-size: 48px;
+  font-weight: 300;
+  letter-spacing: 2px;
+`;
+
+const StyledItem = styled.li`
+  display: flex;
+  align-items: center;
+  padding-bottom: 5px;
+`;
+
+const StyledColumn = styled.span`
+  padding: 0 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  a {
+    color: inherit;
+  }
+
+  width: ${(props) => props.width};
+`;
+
+const StyledButton = styled.button`
+background: transparent;
+border: 1px solid #171212;
+padding: 5px;
+cursor: pointer;
+transition: all 0.1s ease-in;
+&:hover {
+background: #171212;
+color: #ffffff;
+}
+`;
+
+const StyledButtonSmall = styled(StyledButton)`
+padding: 5px;
+`
+  ;
+const StyledButtonLarge = styled(StyledButton)`
+padding: 10px;
+`
+  ;
+const StyledSearchForm = styled.form`
+padding: 10px 0 20px 0;
+display: flex;
+align-items: baseline;
+`
+  ;
 
 type Story = {
   objectId: number
@@ -168,13 +231,13 @@ const App = () => {
   }
 
   return (
-    <div className="container">
-      <h1 className="headline-primary">Development Journal</h1>
+    <StyledContainer>
+      <StyledHeadlinePrimary>Development Journal</StyledHeadlinePrimary>
 
       <SearchForm
-      searchTerm={searchTerm}
-      onSearchInput={handleSearchInput}
-      onSearchSubmit={handleSearchSubmit}
+        searchTerm={searchTerm}
+        onSearchInput={handleSearchInput}
+        onSearchSubmit={handleSearchSubmit}
       ></SearchForm>
 
       {stories.isError && <p>Something went wrong ...</p>}
@@ -184,7 +247,7 @@ const App = () => {
       ) : (
         <List list={stories.data} onRemoveItem={handleRemoveStory} />
       )}
-    </div>
+    </StyledContainer>
   );
 }
 
@@ -199,24 +262,20 @@ const SearchForm = ({
   onSearchInput,
   onSearchSubmit,
 }: searchFormProps) => (
-  <form onSubmit={onSearchSubmit} className="search-form">
-  <InputWithLabel
-    id="search"
-    value={searchTerm}
-    isFocused
-    onInputChange={onSearchInput}
-  >
-    <strong>Search:</strong>
-  </InputWithLabel>
+  <StyledSearchForm onSubmit={onSearchSubmit}>
+    <InputWithLabel
+      id="search"
+      value={searchTerm}
+      isFocused
+      onInputChange={onSearchInput}
+    >
+      <strong>Search:</strong>
+    </InputWithLabel>
 
-  <button
-    type="submit"
-    disabled={!searchTerm}
-    className="button button_large"
-  >
-    Submit
-  </button>
-  </form>
+    <StyledButtonLarge type="submit" disabled={!searchTerm}>
+      Submit
+    </StyledButtonLarge>
+  </StyledSearchForm>
 )
 
 type InputWithLabelProps = {
@@ -237,7 +296,7 @@ const InputWithLabel = ({
   children
 }: InputWithLabelProps) => (
   <>
-    <label htmlFor={id} className="label">
+    <label htmlFor={id} className={styles.label}>
       {children}
     </label>
     &nbsp;
@@ -247,7 +306,7 @@ const InputWithLabel = ({
       value={value}
       autoFocus={isFocused}
       onChange={onInputChange}
-      className="input"
+      className={styles.input}
     />
   </>
 );
@@ -275,23 +334,24 @@ type ItemProps = {
 };
 
 const Item = ({ item, onRemoveItem }: ItemProps) => (
-  <li className="item">
-    <span style={{ width: '40%' }}>
+  <StyledItem>
+    <StyledColumn width="40%">
       <a href={item.url}>{item.title}</a>
-    </span>
-    <span style={{ width: '30%' }}>{item.author}</span>
-    <span style={{ width: '10%' }}>{item.num_comments}</span>
-    <span style={{ width: '10%' }}>{item.points}</span>
-    <span style={{ width: '10%' }}>
-      <button
-        type='button'
+    </StyledColumn>
+    <StyledColumn width="30%">{item.author}</StyledColumn>
+    <StyledColumn width="10%">{item.num_comments}</StyledColumn>
+    <StyledColumn width="10%">{item.points}</StyledColumn>
+    <StyledColumn width="10%">
+      <StyledButtonSmall
+        type="button"
         onClick={() => onRemoveItem(item)}
-        className="button button_small"  
       >
         Dismiss
-      </button>
-    </span>
-  </li>
+      </StyledButtonSmall>
+    </StyledColumn>
+  </StyledItem>
 );
 
 export default App;
+
+export { storiesReducer, SearchForm, InputWithLabel, List, Item };
